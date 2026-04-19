@@ -6,7 +6,7 @@ Pre-built installers for [Aiden](https://aiden.taracod.com) — a local-first AI
 [![Downloads](https://img.shields.io/github/downloads/taracodlabs/aiden-releases/total?color=f97316&label=downloads)](https://github.com/taracodlabs/aiden-releases/releases)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-orange)](https://aiden.taracod.com)
 [![Website](https://img.shields.io/badge/website-aiden.taracod.com-f97316)](https://aiden.taracod.com)
-[![Discord](https://img.shields.io/badge/chat-discord-7289da)](https://discord.gg/TwrWSkph)
+[![Discord](https://img.shields.io/badge/chat-discord-7289da)](https://discord.gg/gMZ3hUnQTm)
 
 ---
 
@@ -31,7 +31,7 @@ Aiden is a local-first Windows AI OS that:
 - Open source under AGPL-3.0. Auditable. Forkable.
 
 [Website →](https://aiden.taracod.com) &nbsp;·&nbsp;
-[Discord →](https://discord.gg/TwrWSkph) &nbsp;·&nbsp;
+[Discord →](https://discord.gg/gMZ3hUnQTm) &nbsp;·&nbsp;
 [Contact →](https://aiden.taracod.com/contact) &nbsp;·&nbsp;
 [For Teams →](https://aiden.taracod.com/#business)
 
@@ -51,7 +51,7 @@ Current: **v3.7.0** — first open source release.
 ## Reporting issues
 
 - **Bugs & feature requests:** [contact form](https://aiden.taracod.com/contact?type=other)
-- **Community chat & support:** [Discord](https://discord.gg/TwrWSkph)
+- **Community chat & support:** [Discord](https://discord.gg/gMZ3hUnQTm)
 - **Security issues:** email [contact@taracod.com](mailto:contact@taracod.com) with "SECURITY" in the subject line
 - **Business inquiries:** [contact form](https://aiden.taracod.com/contact?type=enterprise)
 
