@@ -1,14 +1,14 @@
 blank_issues_enabled: false
 contact_links:
   - name: 🐛 Bug Report
-    url: https://github.com/taracodlabs/DevOS/issues/new?template=bug_report.md
-    about: Report a bug in Aiden (goes to the main source repo)
-  - name: 💡 Feature Request
-    url: https://github.com/taracodlabs/DevOS/issues/new?template=feature_request.md
-    about: Suggest a feature
-  - name: 💬 Feedback & Questions
     url: https://aiden.taracod.com/contact?type=other
-    about: Share feedback or ask general questions
-  - name: 📖 Documentation
+    about: Report a bug via the Aiden contact form
+  - name: 💡 Feature Request
+    url: https://aiden.taracod.com/contact?type=other
+    about: Suggest a new feature or skill
+  - name: 💬 Community Chat
+    url: https://discord.gg/TwrWSkph
+    about: Join the Aiden Discord server
+  - name: 📖 Website & Docs
     url: https://aiden.taracod.com
-    about: Read the Aiden documentation
+    about: Visit the Aiden landing page

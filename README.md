@@ -4,8 +4,9 @@ Pre-built installers for [Aiden](https://aiden.taracod.com) — a local-first AI
 
 [![Latest Release](https://img.shields.io/github/v/release/taracodlabs/aiden-releases?color=f97316&label=latest)](https://github.com/taracodlabs/aiden-releases/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/taracodlabs/aiden-releases/total?color=f97316&label=downloads)](https://github.com/taracodlabs/aiden-releases/releases)
-[![License](https://img.shields.io/badge/license-AGPL--3.0-orange)](https://github.com/taracodlabs/DevOS/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-AGPL--3.0-orange)](https://aiden.taracod.com)
 [![Website](https://img.shields.io/badge/website-aiden.taracod.com-f97316)](https://aiden.taracod.com)
+[![Discord](https://img.shields.io/badge/chat-discord-7289da)](https://discord.gg/TwrWSkph)
 
 ---
 
@@ -23,16 +24,16 @@ irm aiden.taracod.com/install.ps1 | iex
 
 Aiden is a local-first Windows AI OS that:
 
-- Runs **100% on your machine** (or any of 13 cloud providers via BYOK)
+- Runs **100% on your machine** (or any 13 cloud providers via BYOK)
 - Sees your screen, reads your files, controls your computer
 - Remembers everything across sessions (6-layer memory)
 - Ships with 56 skills out of the box — research, trading, code, automation, Windows admin, content creation, voice
 - Open source under AGPL-3.0. Auditable. Forkable.
 
-[Read the docs →](https://github.com/taracodlabs/DevOS) &nbsp;·&nbsp;
 [Website →](https://aiden.taracod.com) &nbsp;·&nbsp;
-[Discord →](https://discord.gg/placeholder) &nbsp;·&nbsp;
-[Contact →](https://aiden.taracod.com/contact)
+[Discord →](https://discord.gg/TwrWSkph) &nbsp;·&nbsp;
+[Contact →](https://aiden.taracod.com/contact) &nbsp;·&nbsp;
+[For Teams →](https://aiden.taracod.com/#business)
 
 ## Latest release
 
@@ -49,9 +50,10 @@ Current: **v3.7.0** — first open source release.
 
 ## Reporting issues
 
-- **Bug reports:** [GitHub Issues on DevOS](https://github.com/taracodlabs/DevOS/issues) (main source repo)
-- **Security issues:** see [SECURITY.md](https://github.com/taracodlabs/DevOS/blob/main/SECURITY.md)
-- **Feedback & feature requests:** [contact form](https://aiden.taracod.com/contact?type=other)
+- **Bugs & feature requests:** [contact form](https://aiden.taracod.com/contact?type=other)
+- **Community chat & support:** [Discord](https://discord.gg/TwrWSkph)
+- **Security issues:** email [contact@taracod.com](mailto:contact@taracod.com) with "SECURITY" in the subject line
+- **Business inquiries:** [contact form](https://aiden.taracod.com/contact?type=enterprise)
 
 ## License
 
