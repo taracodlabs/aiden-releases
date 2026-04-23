@@ -3,8 +3,8 @@
 Signed installers and install scripts for [DevOS — Aiden](https://github.com/taracodlabs/aiden),
 the local-first AI operating system.
 
-**Current:** v3.8.0 — Linux/WSL support (source install)  
-**Platforms:** Windows 10/11 · Linux (Ubuntu 22.04+) · WSL2
+**Current:** v3.8.1 — Native Linux packages (AppImage + .deb)  
+**Platforms:** Windows 10/11 · Linux x64 (AppImage / .deb / source) · WSL2
 
 ---
 
@@ -18,9 +18,27 @@ the local-first AI operating system.
 irm aiden.taracod.com/install.ps1 | iex
 ```
 
-Or download `Aiden-Setup-x.y.z.exe` directly from the latest release above.
+Or download `Aiden-Setup-3.8.1.exe` directly from the latest release above.
 
-### Linux / WSL (source install)
+### Linux — native packages (recommended)
+
+**AppImage (any distro, no install required):**
+
+```bash
+chmod +x Aiden-3.8.1.AppImage
+./Aiden-3.8.1.AppImage
+```
+
+**Debian / Ubuntu (.deb):**
+
+```bash
+sudo dpkg -i devos-ai_3.8.1_amd64.deb
+# Launch: Aiden (app menu) or /opt/Aiden/devos-ai
+```
+
+Download both from the [latest release](https://github.com/taracodlabs/aiden-releases/releases/latest).
+
+### Linux / WSL — source / CLI install (fallback)
 
 ```bash
 curl -fsSL aiden.taracod.com/install.sh | bash
@@ -29,8 +47,6 @@ curl -fsSL aiden.taracod.com/install.sh | bash
 Requires Node.js 20+. Installs to `~/.local/share/aiden`.
 Symlinks binary to `~/.local/bin/aiden`. Runs in headless
 mode (no Electron, just API + CLI).
-
-Native Linux AppImage / .deb packaging coming in v3.9.
 
 ---
 
@@ -50,12 +66,13 @@ A local-first AI operating system with:
 
 ## Platform support
 
-| Platform | Status | Skill count |
-| -------- | ------ | ----------- |
-| Windows 10/11 | Stable | 69 / 69 |
-| Linux (Ubuntu 22.04+) | Source install | 58 / 69 |
-| WSL2 | Source install | 58 / 69 |
-| macOS | Planned (v3.9+) | — |
+| Platform | Status | Install method | Skill count |
+| -------- | ------ | -------------- | ----------- |
+| Windows 10/11 | Stable | .exe installer | 69 / 69 |
+| Linux x64 | Native | AppImage / .deb | 60 / 69 |
+| Linux x64 | Source | curl install.sh | 60 / 69 |
+| WSL2 | Source | curl install.sh | 60 / 69 |
+| macOS | Planned (v3.9+) | — | — |
 
 On Linux/WSL, 9 Windows-specific skills are auto-gated at load:
 `clipboard-history`, `defender-quickscan`, `onenote`, `outlook-native`,
