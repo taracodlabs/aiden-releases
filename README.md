@@ -3,7 +3,7 @@
 Signed installers and install scripts for [DevOS — Aiden](https://github.com/taracodlabs/aiden),
 the local-first AI operating system.
 
-**Current:** v3.9.0 — agentskills.io spec adapter + production hardening  
+**Current:** v3.9.1 — pager fix + palette opt-in  
 **Platforms:** Windows 10/11 · Linux x64 (AppImage / .deb / source) · WSL2
 
 ---
@@ -18,21 +18,21 @@ the local-first AI operating system.
 irm aiden.taracod.com/install.ps1 | iex
 ```
 
-Or download `Aiden-Setup-3.9.0.exe` directly from the latest release above.
+Or download `Aiden-Setup-3.9.1.exe` directly from the latest release above.
 
 ### Linux — native packages (recommended)
 
 **AppImage (any distro, no install required):**
 
 ```bash
-chmod +x Aiden-3.9.0.AppImage
-./Aiden-3.9.0.AppImage
+chmod +x Aiden-3.9.1.AppImage
+./Aiden-3.9.1.AppImage
 ```
 
 **Debian / Ubuntu (.deb):**
 
 ```bash
-sudo dpkg -i devos-ai_3.9.0_amd64.deb
+sudo dpkg -i devos-ai_3.9.1_amd64.deb
 # Launch: Aiden (app menu) or /opt/Aiden/devos-ai
 ```
 
