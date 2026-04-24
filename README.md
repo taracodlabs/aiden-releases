@@ -54,7 +54,7 @@ mode (no Electron, just API + CLI).
 
 A local-first AI operating system with:
 
-- **70+ skills** (trading, research, development, security, creative)
+- **1500+ skills** (trading, research, development, security, creative)
 - **80+ tools** (file, shell, browser, vision, voice, git, web search)
 - **14+ LLM providers** with self-healing fallback chain (Groq, Gemini, OpenRouter, Anthropic, OpenAI, Together, DeepSeek, Cerebras, Ollama, and more)
 - **6-layer memory system** (semantic, episodic, entity graph, learning, facts, hot/cold)
@@ -68,10 +68,10 @@ A local-first AI operating system with:
 
 | Platform | Status | Install method | Skill count |
 | -------- | ------ | -------------- | ----------- |
-| Windows 10/11 | Stable | .exe installer | 70+ / 70+ |
-| Linux x64 | Native | AppImage / .deb | 61 / 70+ |
-| Linux x64 | Source | curl install.sh | 61 / 70+ |
-| WSL2 | Source | curl install.sh | 61 / 70+ |
+| Windows 10/11 | Stable | .exe installer | 1500+ |
+| Linux x64 | Native | AppImage / .deb | ~1491 |
+| Linux x64 | Source | curl install.sh | ~1491 |
+| WSL2 | Source | curl install.sh | ~1491 |
 | macOS | Planned (v4.0+) | — | — |
 
 On Linux/WSL, 9 Windows-specific skills are auto-gated at load:
