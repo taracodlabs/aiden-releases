@@ -3,7 +3,7 @@
 Official installer releases for [Aiden](https://github.com/taracodlabs/aiden)
 — local-first AI OS for Windows & Linux.
 
-## Latest: v3.13.0
+## Latest: v3.15.0
 
 [![Download](https://img.shields.io/github/v/release/taracodlabs/aiden-releases?color=f97316&label=download)](https://github.com/taracodlabs/aiden-releases/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/taracodlabs/aiden-releases/total?color=f97316)](https://github.com/taracodlabs/aiden-releases/releases)
@@ -33,17 +33,14 @@ Requires Node.js 20+. Installs to `~/.local/share/aiden`.
 
 ---
 
-## What's in v3.13.0
+## What's in v3.15.0
 
-- 📦 Public skill registry (`/install <skill>`, `/publish`, `/skills registry <query>`)
-- 🧠 Deep GEPA — learns from failures, writes permanent lessons, degrades failing skills
-- 👤 User modeling — remembers who you are across sessions (`/profile`)
-- 🐳 Docker sandbox — opt-in safe code execution (`AIDEN_SANDBOX_MODE=auto|strict|off`)
-- 🔒 CI/CD + CODEOWNERS — security scanning on every PR
-- ⚡ Real parallel subagents with isolated context
-- ⏰ Real scheduler — reminders that actually fire
-- 🌐 Browser chain — search + click first result (YouTube/Google/DDG)
-- 🔄 Auto-updater — future versions install themselves
+- 🌐 **Browser bridge** — centralised Playwright session, persistent context, new `browser_get_url` tool
+- 📤 **LocalSend skill** — AirDrop-style LAN file transfer to phone/laptop over WiFi
+- 🔒 **Security scanner skill** — opt-in Decepticon integration for your own servers
+- 👥 **OSS contributor infrastructure** — CONTRIBUTING.md, issue templates, public roadmap, good-first-issues
+- 🛡️ 9 npm audit vulnerabilities fixed; security headers on aiden.taracod.com
+- 🔧 CLI fixes: `/sandbox` color error, `/failed` TypeScript error
 
 [Full changelog →](https://github.com/taracodlabs/aiden/blob/main/CHANGELOG.md)
 
@@ -53,6 +50,8 @@ Requires Node.js 20+. Installs to `~/.local/share/aiden`.
 
 | Version | Date | Highlights |
 |---|---|---|
+| [v3.15.0](https://github.com/taracodlabs/aiden-releases/releases/tag/v3.15.0) | 2026-04-28 | Playwright bridge, LocalSend, security scanner, OSS infra |
+| [v3.14.0](https://github.com/taracodlabs/aiden-releases/releases/tag/v3.14.0) | 2026-04-27 | OpenAI-compatible API, agentskills.io, streaming tool output |
 | [v3.13.0](https://github.com/taracodlabs/aiden-releases/releases/tag/v3.13.0) | 2026-04-27 | Skill registry, deep GEPA, user modeling, Docker sandbox |
 | [v3.12.0](https://github.com/taracodlabs/aiden-releases/releases/tag/v3.12.0) | 2026-04-26 | GEPA-lite, memory distillation, real subagents, streaming verbs |
 | [v3.11.0](https://github.com/taracodlabs/aiden-releases/releases/tag/v3.11.0) | 2026-04-25 | Custom provider routing, Claude Haiku 4.5 |
