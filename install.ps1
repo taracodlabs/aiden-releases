@@ -175,7 +175,27 @@ if ($aidenCmd -and $aidenVersion) {
   Write-Host "    [2] " -ForegroundColor Yellow -NoNewline
   Write-Host "Later          (I'll start it myself)"
   Write-Host ""
-  $choice = Read-Host "  Enter choice (1/2)"
+
+  # Detect non-interactive sessions (CI, piped scripts, IDE-spawned shells)
+  # so the installer doesn't crash on Read-Host. Default to "later" then.
+  $isInteractive = $true
+  try {
+    if ([Environment]::UserInteractive -eq $false) { $isInteractive = $false }
+    if ($Host.UI.RawUI.KeyAvailable -eq $null -and $Host.Name -notmatch "ConsoleHost") {
+      $isInteractive = $false
+    }
+  } catch { $isInteractive = $false }
+
+  $choice = ""
+  if ($isInteractive) {
+    try {
+      $choice = Read-Host "  Enter choice (1/2)"
+    } catch {
+      $choice = ""
+    }
+  } else {
+    Write-Host "  (non-interactive session — choosing 'later')" -ForegroundColor DarkGray
+  }
 
   switch ($choice) {
     '1' {
