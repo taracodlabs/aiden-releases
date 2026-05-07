@@ -73,13 +73,16 @@ npm install --silent
 info "Building..."
 npm run build
 
-# Install binary symlink
+# Install binary launcher
+# Aiden v4 is single-process — the CLI entry is dist/cli/v4/aidenCLI.js
+# (produced by `tsc --outDir dist`). The legacy dist-bundle/cli.js is the
+# v3 API-client CLI which expects a separate API server on port 4200;
+# v4 doesn't need that. Point the launcher at the v4 entry.
 mkdir -p "$BIN_DIR"
 cat > "$BIN_DIR/aiden" <<EOF
 #!/usr/bin/env bash
-export AIDEN_HEADLESS=true
 cd "$INSTALL_DIR"
-exec node "$INSTALL_DIR/dist-bundle/cli.js" "\$@"
+exec node "$INSTALL_DIR/dist/cli/v4/aidenCLI.js" "\$@"
 EOF
 chmod +x "$BIN_DIR/aiden"
 
@@ -95,11 +98,11 @@ info "Aiden installed at $INSTALL_DIR"
 info "Binary: $BIN_DIR/aiden"
 echo
 info "Next steps:"
-echo "  1. Start Ollama:            curl -fsSL https://ollama.com/install.sh | sh"
-echo "                              ollama serve &"
-echo "                              ollama pull gemma2:2b"
-echo "  2. Start the API server:    cd $INSTALL_DIR && AIDEN_HEADLESS=true npm start"
-echo "  3. In another terminal:     aiden       (launches CLI)"
+echo "  1. (Optional) Install Ollama for offline mode:"
+echo "       curl -fsSL https://ollama.com/install.sh | sh"
+echo "       ollama serve &"
+echo "       ollama pull qwen2.5:7b"
+echo "  2. Run aiden:               aiden       (chat REPL — first run starts the setup wizard)"
 echo
 info "Docs: https://github.com/$REPO"
 info "Discord: https://discord.gg/gMZ3hUnQTm"
