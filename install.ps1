@@ -87,22 +87,24 @@ Write-Host "  [2/4] " -ForegroundColor Yellow -NoNewline
 Write-Host "Installing $Package globally (this takes 30-60 seconds)..."
 Write-Host ""
 
-$npmOutput = ""
+# npm writes deprecation warnings to stderr even on a successful install.
+# With `$ErrorActionPreference = "Stop"` set at the top of the script, any
+# stderr write from a native command becomes a terminating exception
+# (NativeCommandError). Locally relax the preference around the npm call
+# so warnings are captured into $npmOutput without throwing — we still
+# decide pass/fail from $LASTEXITCODE below.
+$npmOutput   = ""
 $npmExitCode = 0
+$prevEAP     = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
 try {
-  # Capture both stdout and stderr; npm writes most progress to stderr.
-  $npmOutput = & npm install -g $Package 2>&1 | Out-String
+  $npmOutput   = & npm install -g $Package 2>&1 | Out-String
   $npmExitCode = $LASTEXITCODE
 } catch {
-  Write-Host ""
-  Write-Host "  [FAIL] npm install failed: $_" -ForegroundColor Red
-  Write-Host ""
-  if ($npmOutput) {
-    Write-Host "  --- npm output ---" -ForegroundColor DarkGray
-    Write-Host $npmOutput -ForegroundColor DarkGray
-    Write-Host "  ------------------" -ForegroundColor DarkGray
-  }
-  exit 1
+  $npmExitCode = 1
+  $npmOutput   = "$($npmOutput)`n[ps-catch] $($_.Exception.Message)"
+} finally {
+  $ErrorActionPreference = $prevEAP
 }
 
 if ($npmExitCode -ne 0) {
