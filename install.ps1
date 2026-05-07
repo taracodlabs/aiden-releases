@@ -3,8 +3,8 @@
   Aiden installer for Windows.
 
 .DESCRIPTION
-  Downloads the latest Aiden release from GitHub, runs the installer
-  silently, and verifies the aiden launcher is on PATH.
+  Verifies Node.js 18+ is on PATH, installs aiden-runtime globally
+  via npm, and verifies the `aiden` launcher is available.
 
 .EXAMPLE
   iwr https://aiden.taracod.com/install.ps1 -useb | iex
@@ -23,161 +23,163 @@ Write-Host "    ██╔══██║██║██║  ██║██╔�
 Write-Host "    ██║  ██║██║██████╔╝███████╗██║ ╚████║" -ForegroundColor Yellow
 Write-Host "    ╚═╝  ╚═╝╚═╝╚═════╝ ╚══════╝╚═╝  ╚═══╝" -ForegroundColor Yellow
 Write-Host ""
-Write-Host "    Local-first Windows AI OS" -ForegroundColor DarkGray
+Write-Host "    Local-first AI engine for Windows" -ForegroundColor DarkGray
 Write-Host "    aiden.taracod.com" -ForegroundColor DarkGray
 Write-Host ""
 
-$Repo       = "taracodlabs/aiden-releases"
-$TempDir    = "$env:TEMP\aiden-install"
-$InstallDir = "$env:LOCALAPPDATA\Programs\Aiden"
+$Package = "aiden-runtime"
 
-# ── [1/4] Fetch release metadata ──────────────────────────────────────────────
+# ── [1/4] Verify Node.js 18+ ─────────────────────────────────────────────────
 Write-Host "  [1/4] " -ForegroundColor Yellow -NoNewline
-Write-Host "Fetching latest release..."
-try {
-  $Release = Invoke-RestMethod `
-    -Uri "https://api.github.com/repos/$Repo/releases/latest" `
-    -UseBasicParsing
-  $Version = $Release.tag_name
-  $Asset   = $Release.assets |
-               Where-Object { $_.name -like "Aiden-Setup-*.exe" } |
-               Select-Object -First 1
-  if (-not $Asset) { throw "No installer asset found in release $Version" }
-} catch {
+Write-Host "Checking Node.js..."
+
+$node = Get-Command node -ErrorAction SilentlyContinue
+if (-not $node) {
   Write-Host ""
-  Write-Host "  [FAIL] Could not fetch release info: $_" -ForegroundColor Red
+  Write-Host "  [FAIL] Node.js is not installed." -ForegroundColor Red
   Write-Host ""
-  Write-Host "  Check your internet connection and re-run the installer."
-  Write-Host "  If behind a corporate proxy, set the HTTP_PROXY environment variable first."
+  Write-Host "  Aiden requires Node.js 18 or newer."
+  Write-Host "  Install Node.js LTS from:"
+  Write-Host "    https://nodejs.org/en/download" -ForegroundColor Yellow
+  Write-Host ""
+  Write-Host "  Or via winget:"
+  Write-Host "    winget install OpenJS.NodeJS.LTS" -ForegroundColor Yellow
+  Write-Host ""
+  Write-Host "  After installing, open a NEW PowerShell and re-run this installer."
   exit 1
 }
 
-$SizeMB = [math]::Round($Asset.size / 1MB, 1)
-Write-Host "         Version   : $Version"
-Write-Host "         Installer : $($Asset.name)  ($SizeMB MB)"
+try {
+  $nodeVersion = (& node --version) -replace '^v', ''
+  $nodeMajor   = [int]($nodeVersion.Split('.')[0])
+} catch {
+  Write-Host ""
+  Write-Host "  [FAIL] Could not read Node.js version: $_" -ForegroundColor Red
+  exit 1
+}
+
+if ($nodeMajor -lt 18) {
+  Write-Host ""
+  Write-Host "  [FAIL] Node.js $nodeVersion detected. Aiden requires 18+." -ForegroundColor Red
+  Write-Host ""
+  Write-Host "  Upgrade Node.js LTS from:"
+  Write-Host "    https://nodejs.org/en/download" -ForegroundColor Yellow
+  Write-Host ""
+  Write-Host "  Or via winget:"
+  Write-Host "    winget install OpenJS.NodeJS.LTS --force" -ForegroundColor Yellow
+  exit 1
+}
+Write-Host "         Node.js   : v$nodeVersion" -ForegroundColor Green
+
+$npm = Get-Command npm -ErrorAction SilentlyContinue
+if (-not $npm) {
+  Write-Host ""
+  Write-Host "  [FAIL] npm not found on PATH." -ForegroundColor Red
+  Write-Host "  npm ships with Node.js — try reinstalling Node.js LTS."
+  exit 1
+}
+$npmVersion = (& npm --version)
+Write-Host "         npm       : v$npmVersion" -ForegroundColor Green
 Write-Host ""
 
-# ── [2/4] Download ────────────────────────────────────────────────────────────
-if (-not (Test-Path $TempDir)) { New-Item -ItemType Directory -Path $TempDir -Force | Out-Null }
-$InstallerPath = Join-Path $TempDir $Asset.name
-
+# ── [2/4] Install aiden-runtime globally via npm ─────────────────────────────
 Write-Host "  [2/4] " -ForegroundColor Yellow -NoNewline
-Write-Host "Downloading $($Asset.name) ($SizeMB MB)"
-$ProgressPreference = 'Continue'
+Write-Host "Installing $Package globally (this takes 30-60 seconds)..."
+Write-Host ""
+
+$npmOutput = ""
+$npmExitCode = 0
 try {
-  Write-Progress -Activity "Downloading $($Asset.name)" -Status "Please wait..." -PercentComplete -1
-  Invoke-WebRequest -Uri $Asset.browser_download_url -OutFile $InstallerPath -UseBasicParsing
-  Write-Progress -Activity "Downloading $($Asset.name)" -Completed
+  # Capture both stdout and stderr; npm writes most progress to stderr.
+  $npmOutput = & npm install -g $Package 2>&1 | Out-String
+  $npmExitCode = $LASTEXITCODE
 } catch {
-  Write-Progress -Activity "Downloading" -Completed
   Write-Host ""
-  Write-Host "  [FAIL] Download failed: $_" -ForegroundColor Red
+  Write-Host "  [FAIL] npm install failed: $_" -ForegroundColor Red
   Write-Host ""
-  Write-Host "  This is usually a network interruption. Re-run the installer to retry."
+  if ($npmOutput) {
+    Write-Host "  --- npm output ---" -ForegroundColor DarkGray
+    Write-Host $npmOutput -ForegroundColor DarkGray
+    Write-Host "  ------------------" -ForegroundColor DarkGray
+  }
   exit 1
 }
 
-$ActualSize = (Get-Item $InstallerPath).Length
-if ($ActualSize -lt ($Asset.size * 0.95)) {
-  Write-Host "  [FAIL] Partial download (got $([math]::Round($ActualSize/1MB,1)) MB, expected $SizeMB MB)." -ForegroundColor Red
+if ($npmExitCode -ne 0) {
   Write-Host ""
-  Write-Host "  Usually caused by a network interruption. Re-run the installer."
+  Write-Host "  [FAIL] npm install exited with code $npmExitCode." -ForegroundColor Red
+  Write-Host ""
+
+  if ($npmOutput -match "EACCES|EPERM|access denied|Permission denied") {
+    Write-Host "  Permission error detected. Two ways to fix:" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "  Option 1 (recommended) — switch npm to a user-writable prefix:"
+    Write-Host "    mkdir `"$env:LOCALAPPDATA\npm`""
+    Write-Host "    npm config set prefix `"$env:LOCALAPPDATA\npm`""
+    Write-Host "    Add `"$env:LOCALAPPDATA\npm`" to your User PATH."
+    Write-Host "    Then re-run this installer."
+    Write-Host ""
+    Write-Host "  Option 2 — re-run PowerShell as Administrator and try again."
+  } elseif ($npmOutput -match "ENOTFOUND|getaddrinfo|ECONNREFUSED|network") {
+    Write-Host "  Network error. Check your internet connection." -ForegroundColor Yellow
+    Write-Host "  If behind a corporate proxy, configure npm:"
+    Write-Host "    npm config set proxy http://your-proxy:port"
+    Write-Host "    npm config set https-proxy http://your-proxy:port"
+  } else {
+    Write-Host "  --- npm output ---" -ForegroundColor DarkGray
+    Write-Host $npmOutput -ForegroundColor DarkGray
+    Write-Host "  ------------------" -ForegroundColor DarkGray
+  }
   exit 1
 }
-Write-Host "         Download complete  ($([math]::Round($ActualSize/1MB,1)) MB)" -ForegroundColor Green
+
+Write-Host "         Install complete" -ForegroundColor Green
 Write-Host ""
 
-# ── SmartScreen callout ───────────────────────────────────────────────────────
-Write-Host "  +---------------------------------------------+"
-Write-Host "  | IMPORTANT: SmartScreen warning expected     |"
-Write-Host "  +---------------------------------------------+"
-Write-Host "    If Windows shows ""Windows protected your PC"":"
-Write-Host ""
-Write-Host "      1. Click  More info"
-Write-Host "      2. Click  Run anyway"
-Write-Host ""
-Write-Host "    This is normal for newer releases."
-Write-Host "    The Aiden installer is code-signed."
-Write-Host ""
-
-# ── [3/4] Run installer with spinner ─────────────────────────────────────────
+# ── [3/4] Verify aiden is on PATH ────────────────────────────────────────────
 Write-Host "  [3/4] " -ForegroundColor Yellow -NoNewline
-Write-Host "Installing (this takes 30-60 seconds)..." -NoNewline
-
-$proc = Start-Process -FilePath $InstallerPath -ArgumentList "/S" -PassThru
-$spin = @('|', '/', '-', '\')
-$i    = 0
-while (-not $proc.HasExited) {
-  Write-Host "`r  [3/4] " -ForegroundColor Yellow -NoNewline
-  Write-Host "Installing... $($spin[$i % 4])  " -NoNewline
-  Start-Sleep -Milliseconds 200
-  $i++
-}
-Write-Host "`r  [3/4] " -ForegroundColor Yellow -NoNewline
-Write-Host "Installed                         "
-
-if ($proc.ExitCode -ne 0) {
-  Write-Host ""
-  Write-Host "  [FAIL] Installer exited with code $($proc.ExitCode)." -ForegroundColor Red
-  Write-Host ""
-  Write-Host "  Check the detailed log at: $env:TEMP\aiden-install\install.log"
-  exit 1
-}
-Write-Host ""
-
-# ── [4/4] Verify PATH ─────────────────────────────────────────────────────────
-Write-Host "  [4/4] " -ForegroundColor Yellow -NoNewline
 Write-Host "Verifying installation..."
 
+# Refresh PATH from registry so newly-installed bin is visible in this session.
 $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "User") + ";" +
             [System.Environment]::GetEnvironmentVariable("PATH", "Machine")
 
-$AidenCmd = Get-Command aiden -ErrorAction SilentlyContinue
-
+$aidenCmd = Get-Command aiden -ErrorAction SilentlyContinue
+$aidenVersion = $null
+if ($aidenCmd) {
+  try {
+    $aidenVersion = (& aiden --version 2>&1 | Out-String).Trim()
+  } catch {
+    $aidenVersion = $null
+  }
+}
 Write-Host ""
-if ($AidenCmd) {
+
+if ($aidenCmd -and $aidenVersion) {
   Write-Host "  ================================================" -ForegroundColor Green
   Write-Host "  SUCCESS  " -ForegroundColor Green -NoNewline
-  Write-Host "Aiden $Version installed"
+  Write-Host "$Package $aidenVersion installed"
   Write-Host "  ================================================" -ForegroundColor Green
   Write-Host ""
-  Write-Host "    Location: $InstallDir"
+  Write-Host "    Launcher: $($aidenCmd.Source)"
   Write-Host ""
-  Write-Host "  How would you like to start Aiden?" -ForegroundColor Yellow
+
+  # ── [4/4] Quick-start prompt ───────────────────────────────────────────────
+  Write-Host "  [4/4] " -ForegroundColor Yellow -NoNewline
+  Write-Host "How would you like to start Aiden?"
   Write-Host ""
   Write-Host "    [1] " -ForegroundColor Yellow -NoNewline
-  Write-Host "Desktop app  (Electron UI with dashboard)"
+  Write-Host "Start now      (launch the chat REPL in this terminal)"
   Write-Host "    [2] " -ForegroundColor Yellow -NoNewline
-  Write-Host "Terminal     (CLI right here in this terminal)"
-  Write-Host "    [3] " -ForegroundColor Yellow -NoNewline
-  Write-Host "Later        (I'll start it myself)"
+  Write-Host "Later          (I'll start it myself)"
   Write-Host ""
-  $choice = Read-Host "  Enter choice (1/2/3)"
+  $choice = Read-Host "  Enter choice (1/2)"
 
   switch ($choice) {
     '1' {
       Write-Host ""
-      Write-Host "  Launching Aiden desktop..." -ForegroundColor Green
-      $exePath = Join-Path $InstallDir "Aiden.exe"
-      if (Test-Path $exePath) {
-        Start-Process $exePath
-      } else {
-        Write-Host "  Could not find Aiden.exe at $exePath" -ForegroundColor Red
-        Write-Host "  Try launching from the Start Menu." -ForegroundColor DarkGray
-      }
-    }
-    '2' {
-      Write-Host ""
-      Write-Host "  Starting Aiden terminal..." -ForegroundColor Green
-      $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","User") + ";" +
-                  [System.Environment]::GetEnvironmentVariable("PATH","Machine")
-      $aidenExe = Get-Command aiden -ErrorAction SilentlyContinue
-      if ($aidenExe) {
-        & aiden
-      } else {
-        Write-Host "  'aiden' not found on PATH yet." -ForegroundColor Red
-        Write-Host "  Open a NEW terminal and type: aiden" -ForegroundColor DarkGray
-      }
+      Write-Host "  Starting Aiden..." -ForegroundColor Green
+      & aiden
     }
     default {
       Write-Host ""
@@ -185,22 +187,31 @@ if ($AidenCmd) {
       Write-Host "  Open a new terminal and type: " -NoNewline
       Write-Host "aiden" -ForegroundColor Yellow
       Write-Host ""
-      Write-Host "  Docs:   https://aiden.taracod.com" -ForegroundColor DarkGray
-      Write-Host "  Issues: github.com/taracodlabs/aiden-releases/issues" -ForegroundColor DarkGray
+      Write-Host "  Docs:    https://aiden.taracod.com" -ForegroundColor DarkGray
+      Write-Host "  GitHub:  https://github.com/taracodlabs/aiden" -ForegroundColor DarkGray
+      Write-Host "  Discord: https://discord.gg/gMZ3hUnQTm" -ForegroundColor DarkGray
       Write-Host ""
     }
   }
 } else {
   Write-Host "  ================================================"
   Write-Host "  INSTALLED  " -ForegroundColor Yellow -NoNewline
-  Write-Host "Aiden $Version installed"
+  Write-Host "$Package installed but 'aiden' is not on PATH yet"
   Write-Host "  ================================================"
   Write-Host ""
-  Write-Host "  Note: 'aiden' is not on PATH in this session yet." -ForegroundColor Yellow
-  Write-Host "  This is normal -- open a NEW terminal and type: aiden"
-  Write-Host "  If still not found after 30 seconds, log out and back in."
+  Write-Host "  npm installed the package globally, but the bin directory" -ForegroundColor Yellow
+  Write-Host "  is not on this session's PATH yet."
+  Write-Host ""
+  Write-Host "  Open a NEW PowerShell window and type: " -NoNewline
+  Write-Host "aiden" -ForegroundColor Yellow
+  Write-Host ""
+  Write-Host "  If 'aiden' is still not found, the npm global bin directory"
+  Write-Host "  needs to be added to PATH. Find it with:"
+  Write-Host "    npm config get prefix"
+  Write-Host "  Add that path (or its parent on Windows) to your User PATH."
+  Write-Host ""
+  Write-Host "  Docs:    https://aiden.taracod.com" -ForegroundColor DarkGray
+  Write-Host "  GitHub:  https://github.com/taracodlabs/aiden" -ForegroundColor DarkGray
+  Write-Host "  Discord: https://discord.gg/gMZ3hUnQTm" -ForegroundColor DarkGray
   Write-Host ""
 }
-
-# ── Cleanup ───────────────────────────────────────────────────────────────────
-Remove-Item $TempDir -Recurse -Force -ErrorAction SilentlyContinue
