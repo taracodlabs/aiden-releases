@@ -1,10 +1,22 @@
 <#
 .SYNOPSIS
-  Aiden installer for Windows.
+  Aiden installer for Windows — Phase 30.2 (v4.0.2).
 
 .DESCRIPTION
-  Verifies Node.js 18+ is on PATH, installs aiden-runtime globally
-  via npm, and verifies the `aiden` launcher is available.
+  Detects existing installations, verifies Node.js 18+ is on PATH,
+  installs aiden-runtime globally via npm with honest progress
+  feedback, and verifies the `aiden` launcher is available.
+
+  Five steps:
+    [0/4] Check for existing installation (offer fresh / update / cancel)
+    [1/4] Verify Node.js + npm
+    [2/4] npm install -g aiden-runtime (with Write-Progress feedback)
+    [3/4] Verify the `aiden` command resolves on PATH
+    [4/4] Quick-start prompt (launch now / later)
+
+  The denominator stays at 4 because [0/4] is a precondition gate, not
+  a workflow step — most users skip it (no prior install) and the
+  remaining four steps are the actual install.
 
 .EXAMPLE
   iwr https://aiden.taracod.com/install.ps1 -useb | iex
@@ -28,6 +40,131 @@ Write-Host "    aiden.taracod.com" -ForegroundColor DarkGray
 Write-Host ""
 
 $Package = "aiden-runtime"
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+function Test-IsInteractive {
+  # Detect non-interactive (CI, piped scripts, IDE-spawned shells) so the
+  # installer doesn't crash on Read-Host. Defaults to "update only" when
+  # we can't prompt, since that's the safer non-destructive path.
+  try {
+    if ([Environment]::UserInteractive -eq $false) { return $false }
+    if ($Host.Name -notmatch "ConsoleHost") { return $false }
+  } catch { return $false }
+  return $true
+}
+
+# ── [0/4] Detect existing installation ───────────────────────────────────────
+Write-Host "  [0/4] " -ForegroundColor Yellow -NoNewline
+Write-Host "Checking for existing installation..."
+
+$existingFindings = @()
+$existingPaths    = @()
+
+# Phase 30.2: cover the two locations that have ever held Aiden state on
+# Windows. v4 writes to LOCALAPPDATA; APPDATA can hold legacy state from
+# earlier builds or third-party tooling that wrote to the wrong place.
+$candidatePaths = @(
+  @{ Path = "$env:APPDATA\aiden";       Label = "config" },
+  @{ Path = "$env:LOCALAPPDATA\aiden";  Label = "config" }
+)
+foreach ($c in $candidatePaths) {
+  if (Test-Path $c.Path) {
+    $existingFindings += "    - $($c.Path)    ($($c.Label))"
+    $existingPaths    += $c.Path
+  }
+}
+
+# Probe npm. Relax ErrorActionPreference so a stderr write or exit code
+# from `npm list` doesn't terminate the script — we only care about the
+# captured output.
+$npmInstalled    = $false
+$existingVersion = $null
+$prevEAP = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+try {
+  # `npm list -g <pkg> --depth=0` exits 1 when the package is missing.
+  # Capture both streams; the parsed match below decides truth.
+  $npmListOutput = & npm list -g $Package --depth=0 2>&1 | Out-String
+  if ($npmListOutput -match "$([regex]::Escape($Package))@([\d\w\.\-]+)") {
+    $existingVersion = $Matches[1]
+    $npmInstalled    = $true
+    $existingFindings += "    - npm: $Package@$existingVersion    (package)"
+  }
+} catch {
+  # npm not on PATH yet — that's fine, [1/4] will catch it.
+} finally {
+  $ErrorActionPreference = $prevEAP
+}
+
+if ($existingFindings.Count -gt 0) {
+  Write-Host ""
+  Write-Host "         Existing Aiden installation detected:" -ForegroundColor Yellow
+  foreach ($f in $existingFindings) { Write-Host $f }
+  Write-Host ""
+  Write-Host "         How would you like to proceed?"
+  Write-Host "           [1] " -ForegroundColor Yellow -NoNewline
+  Write-Host "Fresh install   — wipe config, reinstall package"
+  Write-Host "           [2] " -ForegroundColor Yellow -NoNewline
+  Write-Host "Update only     — keep config, upgrade package"
+  Write-Host "           [3] " -ForegroundColor Yellow -NoNewline
+  Write-Host "Cancel"
+  Write-Host ""
+
+  $choice = ""
+  if (Test-IsInteractive) {
+    try {
+      $choice = Read-Host "         Enter choice (1/2/3)"
+    } catch {
+      $choice = ""
+    }
+  } else {
+    Write-Host "         (non-interactive session — defaulting to 'update only')" -ForegroundColor DarkGray
+    $choice = "2"
+  }
+
+  switch ($choice) {
+    '1' {
+      Write-Host ""
+      Write-Host "         Wiping existing config..." -ForegroundColor Yellow
+      foreach ($p in $existingPaths) {
+        try {
+          Remove-Item $p -Recurse -Force -ErrorAction Stop
+          Write-Host "           - removed $p" -ForegroundColor DarkGray
+        } catch {
+          Write-Host "           - could not remove $p ($_)" -ForegroundColor Red
+        }
+      }
+      if ($npmInstalled) {
+        Write-Host "         Uninstalling existing $Package@$existingVersion..." -ForegroundColor Yellow
+        $prevEAP = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+        & npm uninstall -g $Package 2>&1 | Out-Null
+        $ErrorActionPreference = $prevEAP
+      }
+      Write-Host "         Fresh install ready." -ForegroundColor Green
+    }
+    '2' {
+      Write-Host ""
+      Write-Host "         Keeping config. Will upgrade package via npm." -ForegroundColor Green
+    }
+    '3' {
+      Write-Host ""
+      Write-Host "         Cancelled. No changes made." -ForegroundColor DarkGray
+      Write-Host ""
+      exit 0
+    }
+    default {
+      Write-Host ""
+      Write-Host "         Unrecognised choice '$choice'. Cancelled." -ForegroundColor Yellow
+      Write-Host "         Re-run the installer to try again." -ForegroundColor DarkGray
+      Write-Host ""
+      exit 0
+    }
+  }
+} else {
+  Write-Host "         No prior installation found." -ForegroundColor Green
+}
+Write-Host ""
 
 # ── [1/4] Verify Node.js 18+ ─────────────────────────────────────────────────
 Write-Host "  [1/4] " -ForegroundColor Yellow -NoNewline
@@ -87,25 +224,61 @@ Write-Host "  [2/4] " -ForegroundColor Yellow -NoNewline
 Write-Host "Installing $Package globally (this takes 30-60 seconds)..."
 Write-Host ""
 
-# npm writes deprecation warnings to stderr even on a successful install.
-# With `$ErrorActionPreference = "Stop"` set at the top of the script, any
-# stderr write from a native command becomes a terminating exception
-# (NativeCommandError). Locally relax the preference around the npm call
-# so warnings are captured into $npmOutput without throwing — we still
-# decide pass/fail from $LASTEXITCODE below.
-$npmOutput   = ""
-$npmExitCode = 0
-$prevEAP     = $ErrorActionPreference
+# Phase 30.2 — honest progress feedback. npm doesn't expose a percentage,
+# so we use Write-Progress with -PercentComplete -1 (indeterminate spinner)
+# and update the Status line with each visible npm output line. We also
+# parse "added N packages" / "audited N packages" patterns to surface a
+# package count when npm gets there. No fake percentages.
+#
+# We still capture the full output for the failure-classification block
+# below (permission / network / generic) so the existing error UX keeps
+# working.
+$npmOutputLines = New-Object System.Collections.Generic.List[string]
+$packageCount   = 0
+$lastStatus     = "Starting npm install..."
+
+# stderr from npm (deprecation warnings) becomes a NativeCommandError
+# under $ErrorActionPreference = "Stop", so relax it here. We still
+# consult $LASTEXITCODE to decide success/failure.
+$prevEAP = $ErrorActionPreference
 $ErrorActionPreference = "Continue"
+
+Write-Progress -Activity "Installing $Package" -Status $lastStatus -PercentComplete -1
 try {
-  $npmOutput   = & npm install -g $Package 2>&1 | Out-String
+  & npm install -g $Package 2>&1 | ForEach-Object {
+    $line = $_.ToString()
+    $npmOutputLines.Add($line) | Out-Null
+    $trimmed = $line.Trim()
+    if (-not $trimmed) { return }
+
+    # Parse known progress patterns. npm 9+ emits final summary lines
+    # like "added 234 packages in 12s". Earlier "downloading ..." or
+    # "fetching ..." lines come through as raw progress text.
+    if ($trimmed -match "^added\s+(\d+)\s+package") {
+      $packageCount = [int]$Matches[1]
+      $lastStatus   = "$packageCount package(s) installed"
+    } elseif ($trimmed -match "^audited\s+(\d+)\s+package") {
+      $lastStatus = "Audited $($Matches[1]) package(s)"
+    } elseif ($trimmed.Length -gt 70) {
+      $lastStatus = $trimmed.Substring(0, 67) + "..."
+    } else {
+      $lastStatus = $trimmed
+    }
+
+    Write-Progress -Activity "Installing $Package" `
+                   -Status $lastStatus `
+                   -PercentComplete -1
+  }
   $npmExitCode = $LASTEXITCODE
 } catch {
   $npmExitCode = 1
-  $npmOutput   = "$($npmOutput)`n[ps-catch] $($_.Exception.Message)"
+  $npmOutputLines.Add("[ps-catch] $($_.Exception.Message)") | Out-Null
 } finally {
+  Write-Progress -Activity "Installing $Package" -Completed
   $ErrorActionPreference = $prevEAP
 }
+
+$npmOutput = $npmOutputLines -join "`n"
 
 if ($npmExitCode -ne 0) {
   Write-Host ""
@@ -135,7 +308,11 @@ if ($npmExitCode -ne 0) {
   exit 1
 }
 
-Write-Host "         Install complete" -ForegroundColor Green
+if ($packageCount -gt 0) {
+  Write-Host "         Install complete — $packageCount package(s)" -ForegroundColor Green
+} else {
+  Write-Host "         Install complete" -ForegroundColor Green
+}
 Write-Host ""
 
 # ── [3/4] Verify aiden is on PATH ────────────────────────────────────────────
@@ -176,28 +353,18 @@ if ($aidenCmd -and $aidenVersion) {
   Write-Host "Later          (I'll start it myself)"
   Write-Host ""
 
-  # Detect non-interactive sessions (CI, piped scripts, IDE-spawned shells)
-  # so the installer doesn't crash on Read-Host. Default to "later" then.
-  $isInteractive = $true
-  try {
-    if ([Environment]::UserInteractive -eq $false) { $isInteractive = $false }
-    if ($Host.UI.RawUI.KeyAvailable -eq $null -and $Host.Name -notmatch "ConsoleHost") {
-      $isInteractive = $false
-    }
-  } catch { $isInteractive = $false }
-
-  $choice = ""
-  if ($isInteractive) {
+  $startChoice = ""
+  if (Test-IsInteractive) {
     try {
-      $choice = Read-Host "  Enter choice (1/2)"
+      $startChoice = Read-Host "  Enter choice (1/2)"
     } catch {
-      $choice = ""
+      $startChoice = ""
     }
   } else {
     Write-Host "  (non-interactive session — choosing 'later')" -ForegroundColor DarkGray
   }
 
-  switch ($choice) {
+  switch ($startChoice) {
     '1' {
       Write-Host ""
       Write-Host "  Starting Aiden..." -ForegroundColor Green
